@@ -6,6 +6,7 @@ import {
   createCompanySchema,
   listCompaniesSchema,
   selectCompanySchema,
+  getCompanySchema,
 } from '../validators/company.validator';
 
 const router = Router();
@@ -108,6 +109,56 @@ router.post(
   authMiddleware.authenticate,
   validate(selectCompanySchema),
   companyController.select
+);
+
+/**
+ * @swagger
+ * /company/{id}:
+ *   get:
+ *     summary: Get company by ID (with access validation)
+ *     tags: [Company]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Company details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 company:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     logo:
+ *                       type: string
+ *                       nullable: true
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *       403:
+ *         description: User does not have access to this company
+ *       404:
+ *         description: Company not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  '/:id',
+  authMiddleware.authenticate,
+  validate(getCompanySchema),
+  companyController.getById
 );
 
 export default router;

@@ -7,6 +7,12 @@ import { InviteRepository } from '../../infrastructure/repositories/InviteReposi
 import { MembershipRepository } from '../../infrastructure/repositories/MembershipRepository';
 import { UserRepository } from '../../infrastructure/repositories/UserRepository';
 import { Role } from '../../domain/enums/Role';
+import {
+  BadRequestError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+} from '../../domain/errors/AppError';
 
 export interface CreateInviteInput {
   email: string;
@@ -63,15 +69,15 @@ export class InviteUseCase {
     );
 
     if (!membership) {
-      throw new Error('User is not a member of this company');
+      throw new ForbiddenError('User is not a member of this company');
     }
 
     if (membership.role === Role.MEMBER) {
-      throw new Error('Members cannot invite others');
+      throw new ForbiddenError('Members cannot invite others');
     }
 
     if (input.role === Role.OWNER && membership.role !== Role.OWNER) {
-      throw new Error('Only owners can invite other owners');
+      throw new ForbiddenError('Only owners can invite other owners');
     }
 
     const existingInvite = await this.inviteRepository.findByEmailAndCompany(
@@ -80,7 +86,7 @@ export class InviteUseCase {
     );
 
     if (existingInvite) {
-      throw new Error('Invite already exists for this email');
+      throw new ConflictError('Invite already exists for this email');
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -111,15 +117,15 @@ export class InviteUseCase {
     const invite = await this.inviteRepository.findByToken(input.token);
 
     if (!invite) {
-      throw new Error('Invalid invite token');
+      throw new NotFoundError('Invalid invite token');
     }
 
     if (invite.accepted) {
-      throw new Error('Invite already accepted');
+      throw new BadRequestError('Invite already accepted');
     }
 
     if (invite.expiresAt < new Date()) {
-      throw new Error('Invite has expired');
+      throw new BadRequestError('Invite has expired');
     }
 
     let user = await this.userRepository.findByEmail(invite.email);
@@ -131,7 +137,7 @@ export class InviteUseCase {
       );
 
       if (existingMembership) {
-        throw new Error('User is already a member of this company');
+        throw new ConflictError('User is already a member of this company');
       }
     } else {
       const hashedPassword = await bcrypt.hash(input.password, 10);

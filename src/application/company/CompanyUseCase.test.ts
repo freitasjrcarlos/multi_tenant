@@ -17,6 +17,8 @@ describe('CompanyUseCase', () => {
       findById: jest.fn(),
       findByUserId: jest.fn(),
       findByIdWithMembers: jest.fn(),
+      findByIdForUser: jest.fn(),
+      findByIdWithMembersForUser: jest.fn(),
     };
 
     mockMembershipRepository = {

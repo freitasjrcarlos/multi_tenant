@@ -20,6 +20,12 @@ export const selectCompanySchema = z.object({
   }),
 });
 
+export const getCompanySchema = z.object({
+  params: z.object({
+    id: z.string().uuid('Invalid company ID'),
+  }),
+});
+
 export const inviteSchema = z.object({
   params: z.object({
     id: z.string().uuid('Invalid company ID'),

@@ -5,6 +5,7 @@ import { CompanyRepository } from '../../infrastructure/repositories/CompanyRepo
 import { MembershipRepository } from '../../infrastructure/repositories/MembershipRepository';
 import { UserRepository } from '../../infrastructure/repositories/UserRepository';
 import { Role } from '../../domain/enums/Role';
+import { ForbiddenError } from '../../domain/errors/AppError';
 
 export interface CreateCompanyInput {
   name: string;
@@ -46,6 +47,20 @@ export interface SelectCompanyInput {
 
 export interface SelectCompanyOutput {
   success: boolean;
+}
+
+export interface GetCompanyInput {
+  companyId: string;
+  userId: string;
+}
+
+export interface GetCompanyOutput {
+  company: {
+    id: string;
+    name: string;
+    logo: string | null;
+    createdAt: Date;
+  };
 }
 
 export class CompanyUseCase {
@@ -115,12 +130,28 @@ export class CompanyUseCase {
     );
 
     if (!membership) {
-      throw new Error('User is not a member of this company');
+      throw new ForbiddenError('User is not a member of this company');
     }
 
     await this.userRepository.updateActiveCompany(input.userId, input.companyId);
 
     return { success: true };
+  }
+
+  async getById(input: GetCompanyInput): Promise<GetCompanyOutput> {
+    const company = await this.companyRepository.findByIdForUser(
+      input.companyId,
+      input.userId
+    );
+
+    return {
+      company: {
+        id: company.id,
+        name: company.name,
+        logo: company.logo,
+        createdAt: company.createdAt,
+      },
+    };
   }
 }
 
