@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String
+  name            String
+  activeCompanyId String?
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  memberships Membership[]
+  invites     Invite[]
+
+  @@map("users")
+}
+
+model Company {
+  id        String    @id @default(uuid())
+  name      String
+  logo      String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  memberships Membership[]
+  invites     Invite[]
+
+  @@map("companies")
+}
+
+model Membership {
+  id        String    @id @default(uuid())
+  userId    String
+  companyId String
+  role      Role      @default(MEMBER)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([userId])
+  @@index([companyId])
+  @@map("memberships")
+}
+
+model Invite {
+  id        String    @id @default(uuid())
+  email     String
+  companyId String
+  token     String    @unique
+  role      Role      @default(MEMBER)
+  invitedBy String
+  accepted  Boolean   @default(false)
+  expiresAt DateTime
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  inviter User    @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([email])
+  @@index([companyId])
+  @@map("invites")
+}
+
