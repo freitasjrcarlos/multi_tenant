@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { CompanyUseCase } from '../../application/company/CompanyUseCase';
 import { AuthRequest } from '../../infrastructure/middleware/auth.middleware';
 import { JwtService } from '../../infrastructure/auth/jwt.service';
