@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AuthUseCase } from '../../application/auth/AuthUseCase';
 import { InviteUseCase } from '../../application/invite/InviteUseCase';
 import { JwtService } from '../../infrastructure/auth/jwt.service';
@@ -17,7 +17,7 @@ export class AuthController {
     this.cookieService = new CookieService();
   }
 
-  signUp = async (req: Request, res: Response): Promise<void> => {
+  signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password, name } = req.body;
 
@@ -35,12 +35,11 @@ export class AuthController {
         user: result.user,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Internal server error';
-      res.status(400).json({ error: message });
+      next(error);
     }
   };
 
-  acceptInvite = async (req: Request, res: Response): Promise<void> => {
+  acceptInvite = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { token, password, name } = req.body;
 
@@ -58,8 +57,30 @@ export class AuthController {
         user: result.user,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Internal server error';
-      res.status(400).json({ error: message });
+      next(error);
+    }
+  };
+
+  login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email, password } = req.body;
+
+      const result = await this.authUseCase.login({ email, password });
+
+      const token = this.jwtService.generateToken({
+        userId: result.user.id,
+        email: result.user.email,
+        activeCompanyId: result.user.activeCompanyId,
+      });
+
+      this.cookieService.setToken(res, token);
+
+      res.status(200).json({
+        user: result.user,
+        token,
+      });
+    } catch (error) {
+      next(error);
     }
   };
 }

@@ -1,21 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
+import { AppError } from '../../domain/errors/AppError';
 
 export class ErrorMiddleware {
   static handle(
-    err: Error,
+    err: Error | AppError,
     req: Request,
     res: Response,
     _next: NextFunction
   ): void {
-    console.error('Error:', err);
+    console.error('Error:', {
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+      path: req.path,
+      method: req.method,
+    });
 
-    if (err.name === 'ValidationError') {
-      res.status(400).json({ error: err.message });
+    if (err instanceof ZodError) {
+      res.status(400).json({
+        error: 'Validation error',
+        details: err.errors,
+      });
       return;
     }
 
-    if (err.name === 'UnauthorizedError') {
-      res.status(401).json({ error: 'Unauthorized' });
+    if (err instanceof AppError) {
+      res.status(err.statusCode).json({
+        error: err.message,
+      });
       return;
     }
 

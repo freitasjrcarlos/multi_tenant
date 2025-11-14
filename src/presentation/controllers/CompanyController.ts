@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import { CompanyUseCase } from '../../application/company/CompanyUseCase';
 import { AuthRequest } from '../../infrastructure/middleware/auth.middleware';
 import { JwtService } from '../../infrastructure/auth/jwt.service';
@@ -15,7 +15,7 @@ export class CompanyController {
     this.cookieService = new CookieService();
   }
 
-  create = async (req: AuthRequest, res: Response): Promise<void> => {
+  create = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) {
         res.status(401).json({ error: 'Unauthorized' });
@@ -45,12 +45,11 @@ export class CompanyController {
 
       res.status(201).json(result);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Internal server error';
-      res.status(400).json({ error: message });
+      next(error);
     }
   };
 
-  list = async (req: AuthRequest, res: Response): Promise<void> => {
+  list = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) {
         res.status(401).json({ error: 'Unauthorized' });
@@ -68,12 +67,11 @@ export class CompanyController {
 
       res.status(200).json(result);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Internal server error';
-      res.status(400).json({ error: message });
+      next(error);
     }
   };
 
-  select = async (req: AuthRequest, res: Response): Promise<void> => {
+  select = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) {
         res.status(401).json({ error: 'Unauthorized' });
@@ -97,8 +95,27 @@ export class CompanyController {
 
       res.status(200).json({ success: true });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Internal server error';
-      res.status(400).json({ error: message });
+      next(error);
+    }
+  };
+
+  getById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const { id } = req.params;
+
+      const result = await this.companyUseCase.getById({
+        userId: req.user.id,
+        companyId: id,
+      });
+
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
     }
   };
 }

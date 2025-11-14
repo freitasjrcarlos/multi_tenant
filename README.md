@@ -10,7 +10,7 @@ Backend Node.js + Express + TypeScript + Prisma para plataforma multi-tenant.
 - PostgreSQL
 - JWT (autenticação via cookie httpOnly)
 - Swagger (documentação da API)
-- Vitest (testes unitários)
+- Jest (testes unitários)
 - Docker Compose
 
 ## 📋 Pré-requisitos
@@ -59,12 +59,13 @@ npm run dev
 - `POST /auth/accept-invite` - Aceitar convite
 
 ### Empresas
-- `POST /company` - Criar empresa (autenticado)
-- `GET /company` - Listar empresas do usuário (autenticado)
-- `POST /company/:id/select` - Selecionar empresa ativa (autenticado)
+- `POST /companies` - Criar empresa (autenticado)
+- `GET /companies` - Listar empresas do usuário (autenticado)
+- `POST /companies/:id/select` - Selecionar empresa ativa (autenticado)
+- `GET /companies/:id` - Obter empresa por ID (autenticado)
 
 ### Convites
-- `POST /company/:id/invite` - Criar convite (OWNER/ADMIN)
+- `POST /companies/:id/invite` - Criar convite (OWNER/ADMIN)
 
 ## 📖 Documentação Swagger
 

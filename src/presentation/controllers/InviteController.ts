@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import { InviteUseCase } from '../../application/invite/InviteUseCase';
 import { AuthRequest } from '../../infrastructure/middleware/auth.middleware';
 import { Role } from '../../domain/enums/Role';
@@ -10,7 +10,7 @@ export class InviteController {
     this.inviteUseCase = new InviteUseCase();
   }
 
-  create = async (req: AuthRequest, res: Response): Promise<void> => {
+  create = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) {
         res.status(401).json({ error: 'Unauthorized' });
@@ -38,8 +38,7 @@ export class InviteController {
         },
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Internal server error';
-      res.status(400).json({ error: message });
+      next(error);
     }
   };
 }

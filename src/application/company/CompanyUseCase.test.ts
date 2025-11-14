@@ -17,6 +17,8 @@ describe('CompanyUseCase', () => {
       findById: jest.fn(),
       findByUserId: jest.fn(),
       findByIdWithMembers: jest.fn(),
+      findByIdForUser: jest.fn(),
+      findByIdWithMembersForUser: jest.fn(),
     };
 
     mockMembershipRepository = {
@@ -89,30 +91,43 @@ describe('CompanyUseCase', () => {
       limit: 10,
     };
 
-    const mockCompanies = [
-      {
-        id: 'company-1',
-        name: 'Company 1',
-        logo: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'company-2',
-        name: 'Company 2',
-        logo: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
+    const mockUser = {
+      id: 'user-id',
+      email: 'test@example.com',
+      password: 'hashed',
+      name: 'Test',
+      activeCompanyId: 'company-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-    (mockCompanyRepository.findByUserId as jest.Mock).mockResolvedValue(mockCompanies);
+    const mockCompany = {
+      id: 'company-1',
+      name: 'Company 1',
+      logo: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockMembership = {
+      id: 'membership-id',
+      userId: 'user-id',
+      companyId: 'company-1',
+      role: Role.MEMBER,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    (mockUserRepository.findById as jest.Mock).mockResolvedValue(mockUser);
+    (mockMembershipRepository.findByUserAndCompany as jest.Mock).mockResolvedValue(mockMembership);
+    (mockCompanyRepository.findById as jest.Mock).mockResolvedValue(mockCompany);
 
     const result = await companyUseCase.list(input);
 
-    expect(result.companies).toHaveLength(2);
-    expect(result.total).toBe(2);
+    expect(result.companies).toHaveLength(1);
+    expect(result.total).toBe(1);
     expect(result.page).toBe(1);
+    expect(result.companies[0].id).toBe('company-1');
   });
 
   it('should select a company', async () => {
@@ -149,54 +164,57 @@ describe('CompanyUseCase', () => {
     );
   });
 
-  it('should paginate companies correctly', async () => {
-    const mockCompanies = Array.from({ length: 25 }, (_, i) => ({
-      id: `company-${i + 1}`,
-      name: `Company ${i + 1}`,
-      logo: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-
-    (mockCompanyRepository.findByUserId as jest.Mock).mockResolvedValue(mockCompanies);
-
-    // Test page 1 with limit 10
-    const result1 = await companyUseCase.list({
+  it('should return empty list when user has no active company', async () => {
+    const input = {
       userId: 'user-id',
       page: 1,
       limit: 10,
-    });
+    };
 
-    expect(result1.companies).toHaveLength(10);
-    expect(result1.total).toBe(25);
-    expect(result1.page).toBe(1);
-    expect(result1.limit).toBe(10);
-    expect(result1.companies[0].id).toBe('company-1');
-    expect(result1.companies[9].id).toBe('company-10');
+    const mockUser = {
+      id: 'user-id',
+      email: 'test@example.com',
+      password: 'hashed',
+      name: 'Test',
+      activeCompanyId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-    // Test page 2 with limit 10
-    const result2 = await companyUseCase.list({
+    (mockUserRepository.findById as jest.Mock).mockResolvedValue(mockUser);
+
+    const result = await companyUseCase.list(input);
+
+    expect(result.companies).toHaveLength(0);
+    expect(result.total).toBe(0);
+    expect(result.page).toBe(1);
+    expect(result.limit).toBe(10);
+  });
+
+  it('should return empty list when user membership is not found', async () => {
+    const input = {
       userId: 'user-id',
-      page: 2,
+      page: 1,
       limit: 10,
-    });
+    };
 
-    expect(result2.companies).toHaveLength(10);
-    expect(result2.page).toBe(2);
-    expect(result2.companies[0].id).toBe('company-11');
-    expect(result2.companies[9].id).toBe('company-20');
+    const mockUser = {
+      id: 'user-id',
+      email: 'test@example.com',
+      password: 'hashed',
+      name: 'Test',
+      activeCompanyId: 'company-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-    // Test page 3 with limit 10 (should have 5 items)
-    const result3 = await companyUseCase.list({
-      userId: 'user-id',
-      page: 3,
-      limit: 10,
-    });
+    (mockUserRepository.findById as jest.Mock).mockResolvedValue(mockUser);
+    (mockMembershipRepository.findByUserAndCompany as jest.Mock).mockResolvedValue(null);
 
-    expect(result3.companies).toHaveLength(5);
-    expect(result3.page).toBe(3);
-    expect(result3.companies[0].id).toBe('company-21');
-    expect(result3.companies[4].id).toBe('company-25');
+    const result = await companyUseCase.list(input);
+
+    expect(result.companies).toHaveLength(0);
+    expect(result.total).toBe(0);
   });
 
   it('should throw error when user tries to select company without being a member', async () => {

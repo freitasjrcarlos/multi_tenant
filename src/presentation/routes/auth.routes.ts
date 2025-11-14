@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { validate } from '../middleware/validator.middleware';
-import { signUpSchema, acceptInviteSchema } from '../validators/auth.validator';
+import { signUpSchema, acceptInviteSchema, loginSchema } from '../validators/auth.validator';
 
 const router = Router();
 const authController = new AuthController();
@@ -39,6 +39,54 @@ const authController = new AuthController();
  *         description: Validation error or user already exists
  */
 router.post('/signup', validate(signUpSchema), authController.signUp);
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login with email and password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     activeCompanyId:
+ *                       type: string
+ *                       nullable: true
+ *                 token:
+ *                   type: string
+ *       401:
+ *         description: Invalid credentials
+ */
+router.post('/login', validate(loginSchema), authController.login);
 
 /**
  * @swagger

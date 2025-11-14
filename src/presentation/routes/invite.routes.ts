@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { InviteController } from '../controllers/InviteController';
 import { AuthMiddleware } from '../../infrastructure/middleware/auth.middleware';
+import { setRLSUserId } from '../../infrastructure/middleware/rls.middleware';
 import { Role } from '../../domain/enums/Role';
 import { validate } from '../middleware/validator.middleware';
 import { inviteSchema } from '../validators/company.validator';
@@ -11,7 +12,7 @@ const authMiddleware = new AuthMiddleware();
 
 /**
  * @swagger
- * /company/{id}/invite:
+ * /companies/{id}/invite:
  *   post:
  *     summary: Create an invite for a company
  *     tags: [Invite]
@@ -53,6 +54,7 @@ const authMiddleware = new AuthMiddleware();
 router.post(
   '/:id/invite',
   authMiddleware.authenticate,
+  setRLSUserId,
   authMiddleware.requireCompany,
   authMiddleware.requireRole([Role.OWNER, Role.ADMIN]),
   validate(inviteSchema),
