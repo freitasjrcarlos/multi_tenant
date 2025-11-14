@@ -104,20 +104,50 @@ export class CompanyUseCase {
     const page = input.page || 1;
     const limit = input.limit || 10;
 
-    const companies = await this.companyRepository.findByUserId(input.userId);
+    const user = await this.userRepository.findById(input.userId);
+    
+    if (!user || !user.activeCompanyId) {
+      return {
+        companies: [],
+        total: 0,
+        page,
+        limit,
+      };
+    }
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedCompanies = companies.slice(startIndex, endIndex);
+    const membership = await this.membershipRepository.findByUserAndCompany(
+      input.userId,
+      user.activeCompanyId
+    );
+
+    if (!membership) {
+      return {
+        companies: [],
+        total: 0,
+        page,
+        limit,
+      };
+    }
+
+    const company = await this.companyRepository.findById(user.activeCompanyId);
+
+    if (!company) {
+      return {
+        companies: [],
+        total: 0,
+        page,
+        limit,
+      };
+    }
 
     return {
-      companies: paginatedCompanies.map((c) => ({
-        id: c.id,
-        name: c.name,
-        logo: c.logo,
-        createdAt: c.createdAt,
-      })),
-      total: companies.length,
+      companies: [{
+        id: company.id,
+        name: company.name,
+        logo: company.logo,
+        createdAt: company.createdAt,
+      }],
+      total: 1,
       page,
       limit,
     };
@@ -154,4 +184,3 @@ export class CompanyUseCase {
     };
   }
 }
-

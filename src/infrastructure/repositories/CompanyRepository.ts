@@ -20,26 +20,53 @@ export class CompanyRepository implements ICompanyRepository {
   }
 
   async findById(id: string): Promise<Company | null> {
-    const company = await this.client.company.findUnique({
-      where: { id },
+    const company = await this.client.company.findFirst({
+      where: { 
+        id,
+        deletedAt: null,
+      },
     });
     return company ? this.toDomain(company) : null;
   }
 
-  async findByUserId(userId: string): Promise<Company[]> {
-    const companies = await this.client.company.findMany({
-      where: {
-        memberships: {
-          some: {
-            userId,
+  async findByUserId(userId: string, page?: number, limit?: number): Promise<{ companies: Company[]; total: number }> {
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit;
+
+    const [companies, total] = await Promise.all([
+      this.client.company.findMany({
+        where: {
+          deletedAt: null,
+          memberships: {
+            some: {
+              userId,
+              deletedAt: null,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-    return companies.map((c) => this.toDomain(c));
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take,
+      }),
+      this.client.company.count({
+        where: {
+          deletedAt: null,
+          memberships: {
+            some: {
+              userId,
+              deletedAt: null,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      companies: companies.map((c) => this.toDomain(c)),
+      total,
+    };
   }
 
   async findByIdWithMembers(id: string): Promise<Company | null> {
@@ -99,7 +126,7 @@ export class CompanyRepository implements ICompanyRepository {
     };
   }
 
-  private toDomainWithMembers(company: PrismaCompany & { memberships?: (PrismaMembership & { user?: any })[] }): CompanyWithMembers {
+  private toDomainWithMembers(company: PrismaCompany & { memberships?: PrismaMembership[] }): CompanyWithMembers {
     return {
       id: company.id,
       name: company.name,

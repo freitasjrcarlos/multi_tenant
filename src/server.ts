@@ -32,8 +32,8 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/company', companyRoutes);
-app.use('/company', inviteRoutes);
+app.use('/companies', companyRoutes);
+app.use('/companies', inviteRoutes);
 
 // Error handling
 app.use(ErrorMiddleware.handle);

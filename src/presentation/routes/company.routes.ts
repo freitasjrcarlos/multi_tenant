@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { CompanyController } from '../controllers/CompanyController';
 import { AuthMiddleware } from '../../infrastructure/middleware/auth.middleware';
+import { setRLSUserId } from '../../infrastructure/middleware/rls.middleware';
 import { validate } from '../middleware/validator.middleware';
 import {
   createCompanySchema,
@@ -15,7 +16,7 @@ const authMiddleware = new AuthMiddleware();
 
 /**
  * @swagger
- * /company:
+ * /companies:
  *   post:
  *     summary: Create a new company
  *     tags: [Company]
@@ -45,13 +46,14 @@ const authMiddleware = new AuthMiddleware();
 router.post(
   '/',
   authMiddleware.authenticate,
+  setRLSUserId,
   validate(createCompanySchema),
   companyController.create
 );
 
 /**
  * @swagger
- * /company:
+ * /companies:
  *   get:
  *     summary: List companies for the authenticated user
  *     tags: [Company]
@@ -77,13 +79,14 @@ router.post(
 router.get(
   '/',
   authMiddleware.authenticate,
+  setRLSUserId,
   validate(listCompaniesSchema),
   companyController.list
 );
 
 /**
  * @swagger
- * /company/{id}/select:
+ * /companies/{id}/select:
  *   post:
  *     summary: Select active company for the user
  *     tags: [Company]
@@ -107,13 +110,14 @@ router.get(
 router.post(
   '/:id/select',
   authMiddleware.authenticate,
+  setRLSUserId,
   validate(selectCompanySchema),
   companyController.select
 );
 
 /**
  * @swagger
- * /company/{id}:
+ * /companies/{id}:
  *   get:
  *     summary: Get company by ID (with access validation)
  *     tags: [Company]
@@ -157,6 +161,7 @@ router.post(
 router.get(
   '/:id',
   authMiddleware.authenticate,
+  setRLSUserId,
   validate(getCompanySchema),
   companyController.getById
 );
